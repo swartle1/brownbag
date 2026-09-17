@@ -64,8 +64,22 @@
   .msg.ok { background:#eaf0e8; color:var(--deep); }
   .msg.err { background:#f7e9e7; color:#7d2f25; }
 
+  .mcount { display:none; font-family:Georgia,serif; font-size:16px; font-weight:700; color:var(--clay); margin-right:auto; }
+
   @media (max-width:900px){ .legs{grid-template-columns:1fr 1fr;} }
-  @media (max-width:580px){ .legs{grid-template-columns:1fr;} body{padding:24px 16px 50px;} }
+  @media (max-width:580px){
+    .legs{grid-template-columns:1fr;}
+    body{padding:24px 16px 50px;}
+    .bar.actions {
+      position:sticky; top:0; z-index:20;
+      background:var(--paper); border-bottom:1px solid var(--line);
+      margin:0 -16px 16px; padding:10px 16px; gap:8px;
+    }
+    .bar.actions .who { display:none; }
+    .bar.actions .mcount { display:inline-block; }
+    .bar.actions .state { flex-basis:100%; font-size:12px; }
+    .bar.actions button { padding:9px 13px; font-size:13.5px; }
+  }
   @media (prefers-reduced-motion:reduce){ .sq .poo{transition:none;} }
 </style>
 </head>
@@ -195,10 +209,12 @@ function cardView() {
     <div class="head"><h1>Sounds familiar?</h1><div class="tally"><b>${n}</b> of ${TOTAL} stuck</div></div>
     <p class="lede">Tap the squares you have lived through, experienced yourself or heard about.</p>
     ${msg ? `<div class="msg ${msg.kind}">${esc(msg.text)}</div>` : ""}
-    <div class="bar">
+    <div class="bar actions">
       <div class="who">Card of <b>${esc(me.name)}</b></div>
-      <button id="rename" class="ghost">Change name</button>
-      <button id="clear" class="ghost">Clear my card</button>
+      <span class="mcount">${n}/${TOTAL}</span>
+      <button id="copy" class="clay">Copy my link</button>
+      <button id="download" class="ghost">Download as a file</button>
+      <span class="state" id="state">Paste it in the Slack thread when you are done.</span>
     </div>
     <div class="legs">
       ${LEGS.map(leg => {
@@ -209,14 +225,8 @@ function cardView() {
       }).join("")}
     </div>
     ${n === TOTAL ? `<div class="full"><b>Full card.</b> Every single one of them. Speak up, you have earned the prize.</div>` : ""}
-    <div class="send">
-      <h3>Send your card back</h3>
-      <p>Copy the link and paste it in the Slack thread. It carries your name and everything you tapped.</p>
-      <div class="bar" style="margin-bottom:0">
-        <button id="copy" class="clay">Copy my link</button>
-        <button id="download" class="ghost">Download as a file</button>
-        <span class="state" id="state"></span>
-      </div>
+    <div class="bar" style="margin:26px 0 0">
+      <button id="clear" class="ghost">Clear my card</button>
     </div>`;
 }
 
@@ -239,15 +249,13 @@ function wire() {
   const cl = root.querySelector("#clear");
   if (cl) cl.onclick = () => { me.marks = {}; save(); render(); };
 
-  const rn = root.querySelector("#rename");
-  if (rn) rn.onclick = () => { draftName = me.name; started = false; render(); };
-
   const cp = root.querySelector("#copy");
   if (cp) cp.onclick = async () => {
     const link = buildLink();
+    const st = root.querySelector("#state");
     try {
       await navigator.clipboard.writeText(link);
-      root.querySelector("#state").textContent = "Copied. Paste it in the Slack thread.";
+      st.textContent = "Copied. Paste it in the Slack thread.";
     } catch (e) {
       prompt("Copy this link and paste it in the Slack thread:", link);
     }
