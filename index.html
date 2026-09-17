@@ -190,6 +190,7 @@ function render() { root.innerHTML = started ? cardView() : gateView(); wire(); 
 
 function gateView() {
   return `
+    <p class="eyebrow"><span style="font-size:20px">💩</span> Shitshow card</p>
     <div class="head"><h1>Sounds familiar?</h1></div>
     <p class="lede">${TOTAL} things that have actually happened on our projects. Tap the squares you have
       lived through, experienced yourself or heard about. They point at gaps in the way we work, and
@@ -206,6 +207,7 @@ function gateView() {
 function cardView() {
   const n = marked();
   return `
+    <p class="eyebrow"><span style="font-size:20px">💩</span> Shitshow card</p>
     <div class="head"><h1>Sounds familiar?</h1><div class="tally"><b>${n}</b> of ${TOTAL} stuck</div></div>
     <p class="lede">Tap the squares you have lived through, experienced yourself or heard about.</p>
     ${msg ? `<div class="msg ${msg.kind}">${esc(msg.text)}</div>` : ""}
