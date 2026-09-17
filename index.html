@@ -1,13 +1,305 @@
-<!DOCTYPE>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-	<meta charset="utf-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<title>index</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sounds familiar?</title>
+<style>
+  :root {
+    --ink:#36455a; --soft:#6f7f8c; --paper:#fff; --card:#f1f2ef; --line:#dfe2dd;
+    --clay:#b85042; --moss:#a7bea1; --moss-line:#93ab8d; --deep:#24332a; --slate:#2b3740;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family:"Segoe UI",-apple-system,BlinkMacSystemFont,Roboto,sans-serif;
+    color:var(--ink); background:var(--paper); margin:0;
+    padding:34px 22px 60px; -webkit-font-smoothing:antialiased;
+  }
+  main { max-width:1200px; margin:0 auto; }
+  h1 { font-family:Georgia,serif; font-size:clamp(27px,4.6vw,40px); font-weight:700; margin:0; letter-spacing:-.01em; }
+  .head { display:flex; align-items:baseline; gap:16px; flex-wrap:wrap; }
+  .tally { font-family:Georgia,serif; font-size:15px; color:var(--soft); white-space:nowrap; }
+  .tally b { color:var(--clay); font-size:23px; }
+  .lede { font-size:15px; line-height:1.5; max-width:66ch; color:var(--soft); margin:7px 0 18px; }
+
+  .gate { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:20px 22px; max-width:440px; }
+  .gate label { display:block; font-size:14px; font-weight:600; margin-bottom:8px; }
+  .gate .hint { font-size:13px; color:var(--soft); margin:10px 0 0; line-height:1.45; }
+  input[type=text] { font:inherit; font-size:15px; padding:10px 13px; width:100%;
+    border:1px solid var(--line); border-radius:7px; background:var(--paper); color:var(--ink); }
+  input[type=text]:focus { outline:2px solid var(--moss); outline-offset:1px; }
+
+  button { font:inherit; font-size:14px; font-weight:600; cursor:pointer; padding:10px 17px;
+    border-radius:7px; border:1px solid transparent; background:var(--slate); color:#fff; }
+  button:hover { opacity:.88; }
+  button:focus-visible { outline:2px solid var(--clay); outline-offset:2px; }
+  button.ghost { background:transparent; color:var(--soft); border-color:var(--line); }
+  button.clay { background:var(--clay); }
+
+  .bar { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:20px; }
+  .who { font-size:14px; color:var(--soft); margin-right:auto; }
+  .who b { color:var(--ink); }
+  .state { font-size:13px; color:var(--soft); }
+
+  .legs { display:grid; grid-template-columns:repeat(4,1fr); gap:15px; align-items:start; }
+  .leg h2 { font-family:Georgia,serif; font-size:17px; margin:0 0 3px; padding-bottom:6px; border-bottom:2px solid var(--clay); }
+  .leg .sub { font-size:12px; color:var(--soft); margin:0 0 10px; }
+
+  .sq { position:relative; width:100%; text-align:left; background:var(--card);
+    border:1px solid var(--line); border-radius:8px; padding:13px 42px 13px 14px; margin-bottom:9px;
+    font-size:13.5px; line-height:1.35; font-weight:400; color:var(--ink); }
+  .sq:hover { background:#e9ebe6; }
+  .sq[aria-pressed="true"] { background:var(--moss); border-color:var(--moss-line); }
+  .sq .poo { position:absolute; right:9px; top:50%; font-size:21px;
+    transform:translateY(-50%) scale(0) rotate(-20deg);
+    transition:transform .2s cubic-bezier(.34,1.56,.64,1); }
+  .sq[aria-pressed="true"] .poo { transform:translateY(-50%) scale(1) rotate(-7deg); }
+
+  .full { margin-top:22px; padding:17px 20px; border-radius:9px; background:var(--deep); color:#eef1ec; font-size:15px; }
+  .full b { color:#fff; }
+  .send { margin-top:26px; padding:20px 22px; border-radius:10px; background:var(--card); border:1px solid var(--line); }
+  .send h3 { font-family:Georgia,serif; font-size:19px; margin:0 0 6px; }
+  .send p { font-size:13.5px; color:var(--soft); margin:0 0 14px; line-height:1.5; }
+  .msg { font-size:13.5px; padding:11px 14px; border-radius:7px; margin-bottom:14px; }
+  .msg.ok { background:#eaf0e8; color:var(--deep); }
+  .msg.err { background:#f7e9e7; color:#7d2f25; }
+
+  @media (max-width:900px){ .legs{grid-template-columns:1fr 1fr;} }
+  @media (max-width:580px){ .legs{grid-template-columns:1fr;} body{padding:24px 16px 50px;} }
+  @media (prefers-reduced-motion:reduce){ .sq .poo{transition:none;} }
+</style>
 </head>
 <body>
+<main id="root"></main>
 
-<a href="./bingo.html">bingo</a>
+<script>
+/* ---- content -------------------------------------------------- */
+const VERSION = 1;
+const LEGS = [
+  { name:"Intake", squares:[
+    "Deal won, project starts tomorrow",
+    "Someone decided I was on it, planning found out later",
+    "First day on the job: here are the docs, figure it out",
+    "Fixed price or fixed budget? Depends who you ask",
+    "Couldn't find the contract when I needed it",
+    "Client was late, and we paid for it",
+    "Client was surprised about their time investment"
+  ]},
+  { name:"Build", squares:[
+    "We found more scope than the budget covers",
+    "The client doesn't really know what they want",
+    "Listed as scope, but really a change request",
+    "Tickets weren't tested in time",
+    "We built on features the client had never reviewed",
+    "Testing feedback was unclear",
+    "Picked up a bug ticket with next to no info",
+    "I fixed a bug but didn't test my work",
+    "Fix, send back, reopened, repeat",
+    "Told the client it was fixed. It wasn't."
+  ]},
+  { name:"Validate", squares:[
+    "Hardening sprint just became another dev sprint",
+    "Team was downsized while development wasn't done",
+    "Retrospective but nothing done with the outcome",
+    "Client contacts me directly long after I left the project team",
+    "The client had never used the whole thing end to end",
+    "UAT feedback that was really new scope"
+  ]},
+  { name:"Launch", squares:[
+    "Client wasn't ready, so the project just drifted",
+    "Client went quiet and nobody escalated",
+    "On go-live day we found the missing pieces",
+    "Go-live was a rushed action, not a decision",
+    "Good project, ended in a fizzle",
+    "Documentation handover never really happened",
+    "Timesheet code still open months later"
+  ]}
+];
+const ALL = [];
+LEGS.forEach(l => l.squares.forEach(s => ALL.push(s)));
+const TOTAL = ALL.length;
 
+/* ---- url encoding --------------------------------------------- */
+const A32 = "0123456789abcdefghijklmnopqrstuv";
+
+function encodeMarks(marks) {
+  let bits = ALL.map(s => marks[s] ? "1" : "0").join("");
+  while (bits.length % 5) bits += "0";
+  let out = "";
+  for (let i = 0; i < bits.length; i += 5) out += A32[parseInt(bits.slice(i, i + 5), 2)];
+  return out;
+}
+function decodeMarks(code) {
+  let bits = "";
+  for (const ch of code) {
+    const v = A32.indexOf(ch);
+    if (v < 0) return null;
+    bits += v.toString(2).padStart(5, "0");
+  }
+  const marks = {};
+  ALL.forEach((s, i) => { if (bits[i] === "1") marks[s] = true; });
+  return marks;
+}
+function buildLink() {
+  const base = location.origin + location.pathname;
+  return base + "#v=" + VERSION + "&n=" + encodeURIComponent(me.name) + "&c=" + encodeMarks(me.marks);
+}
+function readLink() {
+  const h = location.hash.replace(/^#/, "");
+  if (!h) return null;
+  const p = {};
+  h.split("&").forEach(kv => {
+    const i = kv.indexOf("=");
+    if (i > 0) p[kv.slice(0, i)] = decodeURIComponent(kv.slice(i + 1));
+  });
+  if (!p.c) return null;
+  const marks = decodeMarks(p.c);
+  if (!marks) return null;
+  return { name: p.n || "", marks: marks, version: Number(p.v || 0) };
+}
+
+/* ---- state ----------------------------------------------------- */
+let me = { name:"", marks:{} };
+let started = false, draftName = "", msg = null;
+const root = document.getElementById("root");
+
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const marked = () => ALL.filter(s => me.marks[s]).length;
+
+function save() {
+  try { localStorage.setItem("sf-card", JSON.stringify({ name: me.name, marks: me.marks })); } catch(e){}
+  try { history.replaceState(null, "", buildLink()); } catch(e){}
+}
+
+/* ---- views ----------------------------------------------------- */
+function render() { root.innerHTML = started ? cardView() : gateView(); wire(); }
+
+function gateView() {
+  return `
+    <div class="head"><h1>Sounds familiar?</h1></div>
+    <p class="lede">${TOTAL} things that have actually happened on our projects. Tap the squares you have
+      lived through, experienced yourself or heard about. They point at gaps in the way we work, and
+      these procedures are how we are closing them.</p>
+    ${msg ? `<div class="msg ${msg.kind}">${esc(msg.text)}</div>` : ""}
+    <div class="gate">
+      <label for="name">Your name</label>
+      <input type="text" id="name" maxlength="40" value="${esc(draftName)}" placeholder="e.g. Jane Doe" autocomplete="off">
+      <p class="hint">Your card stays on this page. At the end you send it back with one copy and paste.</p>
+      <div style="margin-top:14px"><button id="start" class="clay">Get my card</button></div>
+    </div>`;
+}
+
+function cardView() {
+  const n = marked();
+  return `
+    <div class="head"><h1>Sounds familiar?</h1><div class="tally"><b>${n}</b> of ${TOTAL} stuck</div></div>
+    <p class="lede">Tap the squares you have lived through, experienced yourself or heard about.</p>
+    ${msg ? `<div class="msg ${msg.kind}">${esc(msg.text)}</div>` : ""}
+    <div class="bar">
+      <div class="who">Card of <b>${esc(me.name)}</b></div>
+      <button id="rename" class="ghost">Change name</button>
+      <button id="clear" class="ghost">Clear my card</button>
+    </div>
+    <div class="legs">
+      ${LEGS.map(leg => {
+        const c = leg.squares.filter(s => me.marks[s]).length;
+        return `<div class="leg"><h2>${leg.name}</h2><p class="sub">${c} of ${leg.squares.length}</p>
+          ${leg.squares.map(s => `<button class="sq" data-sq="${esc(s)}" aria-pressed="${!!me.marks[s]}">${esc(s)}<span class="poo">💩</span></button>`).join("")}
+        </div>`;
+      }).join("")}
+    </div>
+    ${n === TOTAL ? `<div class="full"><b>Full card.</b> Every single one of them. Speak up, you have earned the prize.</div>` : ""}
+    <div class="send">
+      <h3>Send your card back</h3>
+      <p>Copy the link and paste it in the Slack thread. It carries your name and everything you tapped.</p>
+      <div class="bar" style="margin-bottom:0">
+        <button id="copy" class="clay">Copy my link</button>
+        <button id="download" class="ghost">Download as a file</button>
+        <span class="state" id="state"></span>
+      </div>
+    </div>`;
+}
+
+/* ---- wiring ---------------------------------------------------- */
+function wire() {
+  const nameEl = root.querySelector("#name");
+  if (nameEl) {
+    nameEl.oninput = e => draftName = e.target.value;
+    nameEl.onkeydown = e => { if (e.key === "Enter") start(); };
+    setTimeout(() => nameEl.focus(), 30);
+  }
+  const s = root.querySelector("#start"); if (s) s.onclick = start;
+
+  root.querySelectorAll(".sq").forEach(b => b.onclick = () => {
+    const sq = b.dataset.sq;
+    me.marks[sq] ? delete me.marks[sq] : (me.marks[sq] = true);
+    msg = null; save(); render();
+  });
+
+  const cl = root.querySelector("#clear");
+  if (cl) cl.onclick = () => { me.marks = {}; save(); render(); };
+
+  const rn = root.querySelector("#rename");
+  if (rn) rn.onclick = () => { draftName = me.name; started = false; render(); };
+
+  const cp = root.querySelector("#copy");
+  if (cp) cp.onclick = async () => {
+    const link = buildLink();
+    try {
+      await navigator.clipboard.writeText(link);
+      root.querySelector("#state").textContent = "Copied. Paste it in the Slack thread.";
+    } catch (e) {
+      prompt("Copy this link and paste it in the Slack thread:", link);
+    }
+  };
+
+  const dl = root.querySelector("#download");
+  if (dl) dl.onclick = () => {
+    const lines = [
+      "Sounds familiar? — " + (me.name || "anonymous"),
+      new Date().toISOString(),
+      marked() + " of " + TOTAL,
+      "",
+      ...ALL.filter(s => me.marks[s]).map(s => "x  " + s),
+      "",
+      buildLink()
+    ].join("\n");
+    const url = URL.createObjectURL(new Blob([lines], { type: "text/plain" }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "sounds-familiar-" + (me.name || "card").replace(/[^\w-]+/g, "-").toLowerCase() + ".txt";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+}
+
+function start() {
+  const name = draftName.trim();
+  if (!name) { msg = { kind:"err", text:"Please fill in your name first." }; render(); return; }
+  me.name = name; started = true; msg = null; save(); render();
+}
+
+/* ---- boot ------------------------------------------------------ */
+(function init() {
+  const fromUrl = readLink();
+  if (fromUrl) {
+    me.name = fromUrl.name; me.marks = fromUrl.marks; draftName = fromUrl.name;
+    started = !!fromUrl.name;
+    if (fromUrl.version !== VERSION) {
+      msg = { kind:"err", text:"This link was made with an older version of the card, so the squares may not line up." };
+    }
+  } else {
+    try {
+      const raw = localStorage.getItem("sf-card");
+      if (raw) {
+        const prev = JSON.parse(raw);
+        me.name = prev.name || ""; me.marks = prev.marks || {}; draftName = me.name;
+        started = !!me.name;
+      }
+    } catch(e){}
+  }
+  render();
+})();
+</script>
 </body>
 </html>
