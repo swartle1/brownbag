@@ -234,6 +234,8 @@ body.embed main{padding-top:14px}
 .mine .sub{border-top:1px solid color-mix(in srgb,var(--ui) 30%, transparent);padding-top:9px;margin-top:9px}
 .mine .sub:first-of-type{border-top:0;padding-top:0;margin-top:0}
 .mine .subhead{font-size:12.5px;font-weight:700;color:var(--ui);margin-bottom:5px}
+.mine .subhead em{font-style:normal;font-weight:500;color:var(--muted)}
+.mine .who em{font-style:normal;color:var(--muted)}
 .tasks{margin:0;padding:0;list-style:none}
 .tasks li{position:relative;padding-left:22px;font-size:13.5px;line-height:1.5;margin-bottom:6px}
 .tasks li:last-child{margin-bottom:0}
@@ -317,7 +319,7 @@ footer .owner a:hover{text-decoration:underline}
 <script>
 const BASE_URL="https://xploregroup.atlassian.net";
 const P=id=>BASE_URL+"/wiki/spaces/WD/pages/"+id;
-const VERSION="8";
+const VERSION="9";
 const DATA_AS_OF="2026-09-21";
 
 /* "Suggest a change" \u2014 the SOP feedback form, with the SOP number pre-filled. */
@@ -448,7 +450,8 @@ const SOPS=[
    what:"Attend the SOW validation meeting the deal owner sets up, and give feedback or raise concerns.",
    quote:"this can be a tech lead, pm or ops: they provide feedback or concerns"}],
  exp:[
-  {r:"deal owner (Monday CRM)",i:["I am the owner of the SOW","I have access to the sales Sharepoint","I save the SOW in the right location","I validate the SOW as described in this procedure"]}]},
+  {r:"deal owner (Monday CRM)",likely:["sales","presales","account-manager"],
+   i:["I am the owner of the SOW","I have access to the sales Sharepoint","I save the SOW in the right location","I validate the SOW as described in this procedure"]}]},
 
 {id:"SOP030",band:"pre",col:1,kind:"step",icon:"route",label:"Won → kickoff",
  title:"Won-to-Kickoff Orchestration",released:"2026-09-23",
@@ -459,7 +462,8 @@ const SOPS=[
  note:"The orchestrator — this is what fires SOP006, SOP017 and SOP018.",
  related:["SOP005","SOP021","SOP004","SOP017","SOP018","SOP014"],
  exp:[
-  {r:"deal owner in Monday",i:["I ensure deals are moved to status won in a timely manner","I determine the assignment-type"]},
+  {r:"deal owner in Monday",likely:["sales","presales","account-manager"],
+   i:["I ensure deals are moved to status won in a timely manner","I determine the assignment-type"]},
   {r:"OPS manager",i:["I take on the planning requests following SOP004","I forward the planning invitation to the necessary people"]},
   {r:"Project manager",i:["I have access to the kickoff board","I pick up the tickets assigned to me"]},
   {r:"Account manager",i:["I update the planning ticket with more info","I have access to the kickoff board","I pick up the tickets assigned to me"]}]},
@@ -774,6 +778,9 @@ SOPS.forEach(s=>{
   s.roles = set.size ? [...set] : (s.audience||["all-employees"]);
   /* alsoRoles covers people a SOP applies to who have no expectations block of their own */
   (s.alsoRoles||[]).forEach(r=>{ if(s.roles.indexOf(r)<0) s.roles.push(r); });
+  /* a hat names no job title, but `likely` says who usually wears it — those roles
+     get the procedure in their view, and the hat's tasks highlighted */
+  hats.forEach(g=>(g.likely||[]).forEach(r=>{ if(s.roles.indexOf(r)<0) s.roles.push(r); }));
   /* roles that do real work in the step-by-step section count for the filter too —
      roles that are merely told about something (informed:true) do not */
   if(s.cont&&s.bands&&s.bands.length>1)
@@ -1084,20 +1091,28 @@ function open(id){
   const named=(s.exp||[]).filter(g=>!g.hat);
   const mine=role?named.filter(g=>(g.map||[]).indexOf(role)>=0):[];
   const others=named.filter(g=>mine.indexOf(g)<0);
+  /* hats this role usually wears count as yours; the rest stay in the by-function block */
+  const myHats=role?(s.hats||[]).filter(g=>(g.likely||[]).indexOf(role)>=0):[];
+  const restHats=(s.hats||[]).filter(g=>myHats.indexOf(g)<0);
+  const mineAll=mine.concat(myHats);
 
   let block="";
   if(!s.exp||!s.exp.length){
     block='<div class="gapnote"><strong>No role-specific expectations documented yet.</strong> '
          +'This SOP has no “Requirements &amp; expectations” section, so there is nothing to show per role.</div>';
-  } else if(role && mine.length){
+  } else if(role && mineAll.length){
+    const head=g=>'as '+esc(g.r)+(g.hat?' <em>— when you are the one holding it</em>':'');
+    const intro=myHats.length
+      ? 'More than one of these can be you on a given assignment. Work out which applies here.'
+      : 'This SOP splits '+esc(roleName(role))+' into '+mineAll.length
+        +' different jobs. Work out which one is you on this assignment — you may hold more than one.';
     block='<div class="mine"><h4>Your part here</h4>'
-      +(mine.length>1
-        ? '<div class="who">This SOP splits '+esc(roleName(role))+' into '+mine.length
-          +' different jobs. Work out which one is you on this assignment — you may hold more than one.</div>'
-          +mine.map(g=>'<div class="sub"><div class="subhead">as '+esc(g.r)+'</div>'+taskList(g.i)+'</div>').join("")
-        : '<div class="who">as '+esc(mine[0].r)+'</div>'+taskList(mine[0].i))
+      +(mineAll.length>1
+        ? '<div class="who">'+intro+'</div>'
+          +mineAll.map(g=>'<div class="sub"><div class="subhead">'+head(g)+'</div>'+taskList(g.i)+'</div>').join("")
+        : '<div class="who">'+head(mineAll[0])+'</div>'+taskList(mineAll[0].i))
       +'</div>';
-  } else if(role && !mine.length){
+  } else if(role && !mineAll.length){
     const inSteps=(s.stepsAlso||[]).some(g=>!g.informed&&g.roles.indexOf(role)>=0);
     if(inSteps)
       block='<div class="callout">The expectations section does not name '+esc(roleName(role))
@@ -1106,9 +1121,9 @@ function open(id){
       block='<div class="callout">This SOP names no specific expectations for '+esc(roleName(role))
         +'. You may still be involved — the roles it does name are below.</div>';
   }
-  if(s.hats&&s.hats.length){
+  if(restHats.length){
     block+='<div class="blk"><h4>By function, not role — applies to whoever holds it</h4>'
-      +s.hats.map(g=>'<div class="grp"><div class="who">'+esc(g.r)+' <em>— whoever that is on this assignment</em></div>'
+      +restHats.map(g=>'<div class="grp"><div class="who">'+esc(g.r)+' <em>— whoever that is on this assignment</em></div>'
         +taskList(g.i)+'</div>').join("")+'</div>';
   }
   if(others.length){
