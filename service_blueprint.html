@@ -319,8 +319,8 @@ footer .owner a:hover{text-decoration:underline}
 <script>
 const BASE_URL="https://xploregroup.atlassian.net";
 const P=id=>BASE_URL+"/wiki/spaces/WD/pages/"+id;
-const VERSION="9";
-const DATA_AS_OF="2026-09-21";
+const VERSION="11";
+const DATA_AS_OF="2026-09-24";
 
 /* "Suggest a change" \u2014 the SOP feedback form, with the SOP number pre-filled. */
 const FEEDBACK_FORM=id=>"https://forms.cloud.microsoft/Pages/ResponsePage.aspx"
@@ -537,16 +537,16 @@ const SOPS=[
  title:"Stage gate: development complete",released:"2026-09-23",
  url:P("10759670219"),tools:["Confluence","Jira"],
  starts:"PM and tech lead decide development is complete",ends:"Gate verified, UAT can open",
- purpose:"Makes “development is complete” a verified check, sets final UAT up for success, and stops dev tasks lingering on.",
- scope:"A stage gate — the work itself happens throughout delivery, not from scratch here.",
+ purpose:"Makes “development is complete” a verified check, sets final UAT up for success, and stops dev tasks lingering on, so client and team know where they stand.",
+ scope:"A stage gate — the work itself happens throughout delivery, not from scratch here. All assignments with Whisper in the lead, excluding sourcing.",
  related:["SOP023","SOP025"],board:"whis-stagegate-development-completed",
  stepsAlso:[{roles:["account-manager"],
    what:"Brought in when the resolution is to ask the client for additional budget.",
    quote:"we ask for additional budget (incl. account manager in this case)"}],
  exp:[
-  {r:"Project manager",i:["I join the tech lead to go through the decision criteria","I manage and update the acceptance document","I initiate the retrospective request"]},
-  {r:"tech lead",i:["I read the procedure at the beginning of the project","I join the PM to go through the decision criteria","I own the quality of the move-to-prd plan and other technical docs"]},
-  {r:"analyst",i:["I verify scope and change requests have been properly documented","I verify what was built matches what was agreed to"]}]},
+  {r:"Project manager",i:["I initiate this stagegate","I pull in the tech lead to go through the decision criteria","I pick up the PM tasks listed on whis-stagegate-development-completed Jira board","I dissolve the main project team and communicate about it","I inform the client about the next project phases"]},
+  {r:"tech lead",i:["I read the procedure at the beginning of the project","I join the PM to go through the decision criteria","I own the quality of the move-to-prd plan and other technical docs","I pick up the tech lead tasks listed on whis-stagegate-development-completed Jira board"]},
+  {r:"analyst",i:["I pick up the analysts tasks listed on whis-stagegate-development-completed Jira board"]}]},
 
 {id:"SOP025",band:"del",col:3,kind:"step",icon:"search",label:"Final UAT",title:"Final UAT round",
  released:"2026-09-23",url:P("10759603795"),tools:["Jira","Confluence"],
